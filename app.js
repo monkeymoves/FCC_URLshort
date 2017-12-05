@@ -38,16 +38,40 @@ app.get('/new/:urlToShorten(*)', (req, res, next) => {
                 return res.send('error saving to db');
             }
         })
-        return res.json({ data });
+        return res.json(data);
         
 
     }
   
-    console.log(urlToShorten);
-    return res.json({ urlToShorten: "failed" });
+    var data = new shortUrl({
+        originalUrl: urlToShorten + ' does not match expected URL format',
+        shorterUrl: 'Invalid URL'
+
+    });
+    return res.json(data);
 
 });
-//
+//query db & forward to orginal URL
+
+app.get('/:urlToForward', (req, res, next)=>{
+    //store value of params in shorterURL
+    var  shorterUrl = req.params.urlToForward;
+    //shortUrl = mongodb collectio
+    shortUrl.findOne({'shorterUrl': shorterUrl}, (err, data)=>{
+        if (err) return res.send('error reading db');
+        var re = new RegExp("^(http|https)://", "i");
+        var strToCheck = data.originalUrl;
+        if(re.test(strToCheck)){
+            res.redirect(301, data.originalUrl )
+        }
+        else{
+            res.redirect(301, 'http://' + data.originalUrl)
+        }
+    });
+});
+
+
+
 
 app.listen(3000, () => {
     console.log('working server');
